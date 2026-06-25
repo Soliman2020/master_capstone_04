@@ -95,8 +95,8 @@ stack-data==0.6.3
 sympy==1.14.0
 terminado==0.18.1
 tinycss2==1.5.1
-torch==2.12.1
-torchvision==0.27.1
+torch==2.12.1+cu126
+torchvision==0.27.1+cu126
 tornado==6.5.7
 traitlets==5.15.1
 typing_extensions==4.15.0
