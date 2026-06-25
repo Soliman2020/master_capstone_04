@@ -69,9 +69,15 @@ def fit(
     test_loader: DataLoader,
     epochs: int,
     lr: float,
+    seed: int = SEED,
 ) -> dict:
-    """Train one model end-to-end. Returns per-epoch metrics + final test score."""
-    set_seed(SEED)
+    """Train one model end-to-end. Returns per-epoch metrics + final test score.
+
+    `seed` controls model init + training-shuffle noise only. The train/val/test
+    split is held constant by `build_dataloaders` (SEED=42 there) so multi-seed
+    runs compare models on the same data partition.
+    """
+    set_seed(seed)
     model = get_model(model_name).to(DEVICE)
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
