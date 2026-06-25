@@ -1,6 +1,6 @@
 """CNN models for the P4 CNRPark+EXT occupancy experiment.
 
-Two models, differing by exactly ONE change (rubric requirement):
+Two models, differing by exactly ONE change:
 
   BaselineCNN      -> plain conv stack, no normalization, no dropout.
   ExperimentalCNN  -> SAME architecture + BatchNorm2d after each conv.
