@@ -3,8 +3,12 @@
 **Project:** Capstone Project 4 (Udacity AI Mastery)
 **Dataset:** CNRPark (original, not EXT) — http://cnrpark.it/
 **Architecture:** 3-block CNN (baseline) vs. 4-block CNN (experimental) with the same `Flatten`→FC head
-**Author:** Soliman
-**Date:** 2026-06-26
+
+---
+
+## 0. Report overview
+
+This project addresses **binary image classification** on parking-lot camera patches, predicting for each 150×150 RGB image whether a parking space is `busy` (occupied) or `free` (empty). The dataset is **CNRPark** (Amato et al., ISTI-CNR, 2016) — a publicly released research corpus of 12,584 patches from two cameras, used here for educational comparison under the ISTI-CNR terms. The deep-learning model implemented is a **Convolutional Neural Network (CNN)** in PyTorch, with two configurations compared: a three-block baseline and a four-block experimental variant that differs by exactly one architectural change (one additional convolution block) so the comparison isolates that single lever.
 
 ---
 
@@ -16,7 +20,7 @@ This section explains the whole project without any jargon. Every technical term
 
 Imagine a security camera watching a parking lot. Every few seconds it captures a small picture of one parking space. A human security analyst can look at each picture and instantly tell whether the space is occupied (a car is parked there) or empty. We wanted a computer to do the same job — look at a picture and answer **"busy"** or **"free"** — so the analyst doesn't have to.
 
-The computer program we built to do this is called a **Convolutional Neural Network**, or **CNN** for short. A CNN is a kind of machine-learning model loosely inspired by the visual cortex: it learns to recognize patterns in small patches of an image (edges, corners, blobs of color), then combines those patterns into bigger structures (a wheel, a bumper, a shadow), and eventually outputs one decision ("busy" or "free"). You don't tell it what to look for — you show it thousands of labeled pictures and it figures out the patterns itself.
+The computer program we built to do this is called a **Convolutional Neural Network**, or **CNN** for short. A CNN is a kind of machine-learning model loosely inspired by the visual cortex: it learns to recognize patterns in small patches of an image (edges, corners, blobs of color), then combines those patterns into bigger structures (a wheel, a bumper, a shadow), and eventually outputs one decision ("busy" or "free"). You don't tell it what to look for — you show it thousands of labeled pictures and it figures out the patterns itself. For a tutorial-level overview of the convolution operation and the canonical CNN building blocks used here, see O'Shea & Nash (2015).
 
 For this project, we built **two** CNNs and compared them. They differ by exactly one architectural choice (more on that below) so the comparison tells us whether that choice actually helped or hurt.
 
@@ -38,7 +42,7 @@ Holding out a test set we never trained on is the standard way to make sure the 
 
 Both CNNs read a 150×150 RGB image and produce one number: a "score" between 0 and 1, where high means "busy" and low means "free". Inside, they're built out of small building blocks stacked on top of each other:
 
-- A **convolution block** scans the image with many tiny filters (e.g. 3×3 pixels) and produces a slightly smaller picture of "what it found" — early blocks find edges and colors, later blocks find larger structures. Each block typically doubles the number of filters while halving the spatial size.
+- A **convolution block** scans the image with many tiny filters (e.g. 3×3 pixels) and produces a slightly smaller picture of "what it found" — early blocks find edges and colors, later blocks find larger structures. Each block typically doubles the number of filters while halving the spatial size via max-pooling.
 - A **fully-connected (FC) head** at the end takes all those findings and combines them into the final score.
 
 The two CNNs are:
@@ -50,7 +54,7 @@ The single difference is **depth** — one extra convolution block. Both end wit
 
 ### Why the experimental model is smaller, not bigger
 
-You might expect "more layers = more parameters". In this case, the opposite happens, and it's worth understanding why. After the conv blocks, the baseline model flattens a **128-channel × 18×18-pixel** picture into a single long vector (about **41,500 numbers**) and feeds it to the FC head. The experimental model, with one extra MaxPool operation that halves the spatial size, flattens a **256-channel × 9×9-pixel** picture (about **20,700 numbers**) — fewer numbers to feed to the head, so the head itself has fewer parameters. The extra convolution block adds ~280k parameters; the smaller head removes ~2.7M. Net change: the experimental model is **~1.8× smaller** overall. This is a well-known modern-CNN pattern: depth + spatial shrinking can be more parameter-efficient than shallow-and-wide.
+You might expect "more layers = more parameters". In this case, the opposite happens, and it's worth understanding why. After the conv blocks, the baseline model flattens a **128-channel × 18×18-pixel** picture into a single long vector (about **41,500 numbers**) and feeds it to the FC head. The experimental model, with one extra MaxPool operation that halves the spatial size, flattens a **256-channel × 9×9-pixel** picture (about **20,700 numbers**) — fewer numbers to feed to the head, so the head itself has fewer parameters. The extra convolution block adds about 280k parameters; the smaller head removes about 2.7M. Net change: the experimental model is **1.8× smaller** overall. This is a well-known modern-CNN pattern: depth + spatial shrinking can be more parameter-efficient than shallow-and-wide.
 
 ### What the headline numbers mean in plain language
 
@@ -115,19 +119,14 @@ Binary occupancy classification on parking-lot camera patches. Given a 150×150 
 ### 1.1 Why CNRPark
 CNRPark (Amato et al., ISTI-CNR, 2016) is a clean binary image-classification dataset: ~12.5k 150×150 patches across two cameras (A, B), labeled `busy`/`free` by folder. It is small enough to train a CNN on a laptop in minutes per epoch, large enough that the model has to learn rather than memorize, and natural for the capstone's security-ops theme. The published baseline in the Amato paper reports ≈99% accuracy on this dataset, so the question is not "can we solve it?" but "does a deeper model improve on a shallower one under controlled conditions?"
 
-### 1.2 Conflict checks (no overlap with prior capstones)
-- P3 (smoke detection) is a **tabular CSV** with Temperature/TVOC/eCO2 columns — no image overlap.
-- P7's `surveillance_events` are **synthetic metadata**, not images — no overlap.
-- P1, P2, P5, P6 did not touch image classification at all.
-
-### 1.3 License
+### 1.2 License
 Research / educational use only (ISTI-CNR terms). Dataset excluded from version control via `.gitignore`. The trained models are not deployed in any real surveillance system.
 
 ---
 
 ## 2. Data
 
-### 2.1 On-disk summary (verified 2026-06-25)
+### 2.1 On-disk summary
 
 | camera | busy (1) | free (0) | total |
 |---|---|---|---|
@@ -141,7 +140,7 @@ Research / educational use only (ISTI-CNR terms). Dataset excluded from version 
 - Same split indices for both baseline and experimental — the only difference between runs is the model.
 
 ### 2.2 Preprocessing
-- `Resize(150, 150) → ToTensor → Normalize(mean=ImageNet, std=ImageNet)` shared by train and eval.
+- `Resize(150, 150) → ToTensor → Normalize(mean=ImageNet, std=ImageNet)` shared by train and eval. The ImageNet-mean/std normalization is the standard preprocessing used with PyTorch's pretrained vision backbones (Paszke et al., 2019); using it here keeps the option open of warm-starting from pretrained weights in a follow-up.
 - Training augmentation: `RandomHorizontalFlip` + `RandomVerticalFlip`. **Shared by both runs** so the comparison isolates the architectural change, not augmentation.
 - No color jitter: would fight the weather/lighting signal we want the model to see.
 
@@ -153,7 +152,7 @@ Research / educational use only (ISTI-CNR terms). Dataset excluded from version 
 ## 3. Methods
 
 ### 3.1 Baseline model — `BaselineCNN`
-- 3 conv blocks, doubling channels per block: `Conv(3→32) → ReLU → MaxPool(2)` → `Conv(32→64) → ReLU → MaxPool(2)` → `Conv(64→128) → ReLU → MaxPool(2)`.
+- 3 conv blocks, doubling channels per block: `Conv(3→32) → ReLU → MaxPool(2)` → `Conv(32→64) → ReLU → MaxPool(2)` → `Conv(64→128) → ReLU → MaxPool(2)`. Implemented with `nn.Conv2d` + `nn.MaxPool2d` (PyTorch `torch.nn` API; Paszke et al., 2019).
 - Feature map at the end of the conv stack: `128 × 18 × 18` (downsampled 8× from the 150×150 input).
 - Head: `Flatten → Linear(128·18·18, 128) → ReLU → Linear(128, 1)`. The first linear layer is the parameter hog (~5.3M params out of 5.4M total).
 - **Total parameters: 5,401,921.**
@@ -172,16 +171,17 @@ Research / educational use only (ISTI-CNR terms). Dataset excluded from version 
 - **Real test of depth** rather than a regularization knob (BatchNorm) or a head-mechanism change (GAP).
 
 ### 3.4 Training procedure
-- **Loss:** `BCEWithLogitsLoss`. **Optimizer:** `Adam(lr=1e-3)`. **Batch size:** 64. **Epochs:** 20 (single-seed §5) / 10 (multi-seed §6).
-- **`DEVICE = cuda if available else cpu`** in `src/train.py` — resolves to `cuda:0` on the GTX 1650 Ti.
+- **Loss:** `BCEWithLogitsLoss` (the numerically stable pairing of a sigmoid + binary cross-entropy — PyTorch docs, Paszke et al., 2019). **Optimizer:** `Adam(lr=1e-3)` (Kingma & Ba, 2015). **Batch size:** 64. **Epochs:** 20 (single-seed §4) / 10 (multi-seed §5).
+- **`DEVICE = cuda if available else cpu`** in `src/train.py` — resolves to `cuda:0` on the GTX 1650 Ti. CUDA tensor semantics and `torch.device` handling follow the PyTorch documentation (Paszke et al., 2019).
 - **Seeding:** `SEED = 42` global constant in `src/dataset.py` (data split) and `src/train.py` (default). Multi-seed runs vary the model's `seed=` argument only; the data split is held constant.
-- **DataLoaders:** `num_workers = 2` (Windows-safe via the `build_dataloaders` function pattern).
+- **DataLoaders:** `num_workers = 2` (Windows-safe via the `build_dataloaders` function pattern). `DataLoader` shuffling and batching semantics follow the PyTorch documentation (Paszke et al., 2019).
 - Per-epoch metrics persisted to `reports/metrics_*.csv` by notebook cell-19a so Restart & Run All is reproducible.
 
 ### 3.5 Hardware / software
 - `cnn_env` Python 3.12 venv at `D:/AI_Master/Udacity/capstone_projects/project_04_DeepLearning/cnn_env/`
-- `torch==2.12.1+cu126`, `torchvision==0.27.1+cu126` (CUDA build; NVIDIA GTX 1650 Ti, driver CUDA 13.1).
+- `torch==2.12.1+cu126`, `torchvision==0.27.1+cu126` (CUDA build; NVIDIA GTX 1650 Ti, driver CUDA 13.1). PyTorch tensor and `torch.nn` APIs used throughout (Paszke et al., 2019).
 - `pandas`, `matplotlib`, `seaborn`, `jupyterlab`, `nbformat`, `nbconvert`. Full list in `requirements.txt` (a `pip freeze`).
+- The published baseline on this dataset reports ≈99% accuracy (Amato et al., 2016); the question we answer here is not "can we match it?" but "does one extra convolution block, holding everything else constant, help?"
 
 ---
 
@@ -293,15 +293,19 @@ The discarded numbers (a) and (b) appear in earlier notebook revisions; the on-d
 ### 8.1 What the data supports
 
 1. **The deeper model trains successfully on this dataset** and reaches competitive *validation* accuracy (best_val_acc 0.9968, tying baseline) — but its final-epoch test accuracy (0.9849) is worse than baseline (0.9976) due to a late-training collapse.
-2. **The deeper model has lower parameter count** (~1.8× smaller) — the wider feature map has smaller spatial extent, which dominates the head size. **But smaller did not mean better here.**
+2. **The deeper model has lower parameter count** (~1.8× smaller) — the wider feature map has smaller spatial extent, which dominates the head size. This is the depth-plus-spatial-shrinking pattern O'Shea & Nash (2015) describe as standard CNN practice: a stack of conv blocks each halves spatial resolution while doubling channels, so the parameter count grows sub-linearly with depth. **But smaller did not mean better here.**
 3. **The deeper model has lower seed-to-seed variance** (std 0.0028 vs 0.0044) — but consistently lands in a lower accuracy band than baseline.
 4. **The deeper model exhibits late-training instability** (epoch-20 val_loss collapse) and a **camera-B weakness** that the baseline does not.
 
-### 8.2 What the data does not support
+### 8.2 Limitations and risks
 
-1. **"Depth helps on this dataset."** The new run contradicts this: baseline wins single-seed (+1.27 pp), wins multi-seed 3/3 (mean +0.42 pp), and is more stable late in training. (An earlier run had favored experimental by +0.37 pp; that result was not reproducible — see §7.)
-2. **A generalizable claim about deeper CNNs.** This is one dataset (~12.5k patches, binary, two cameras); other image-classification tasks may show different patterns.
-3. **"The deeper model is useless."** Its `best_val_acc` ties baseline (0.9968) — it can reach baseline-level performance. The gap is a training-dynamics + camera-generalization problem, not a capacity problem. A learning-rate schedule, early stopping on val_loss, or BatchNorm might recover the gap.
+1. **"Depth helps on this dataset" is not supported.** The new run contradicts it: baseline wins single-seed (+1.27 pp), wins multi-seed 3/3 (mean +0.42 pp), and is more stable late in training. (An earlier run had favored experimental by +0.37 pp; that result was not reproducible — see §7.)
+2. **The conclusion does not generalize beyond this dataset.** This is one dataset (~12.5k patches, binary, two cameras); other image-classification tasks may show different patterns. A per-camera *holdout* (train on A, evaluate on B) is the natural next experiment and was not run here.
+3. **Camera-B generalization is unverified.** §6.2 shows the experimental model has a camera-B weakness the baseline does not (`B/free` precision 0.912, `B/busy` recall 0.969). The pooled test score partly hides this. For deployment (where a new site = a new camera), the per-camera holdout is the load-bearing test, and we have not done it — so neither model is deployment-validated for an unseen camera.
+4. **Three seeds is too few for a confidence interval.** The 95% CI on the mean delta at n=3 is roughly ±4 pp, so we cannot reject "no effect" with high confidence; the sign is consistent (3/3 toward baseline) but the magnitude is uncertain. A ≥10-seed sweep (§10.1) is needed before treating the −0.42 pp as a real effect rather than a directional hint.
+5. **Single-seed numbers are unreliable on this task.** The single-seed picture (experimental favored by +0.37 pp in an earlier run) was misleading and not reproducible; the multi-seed run reversed its sign. Any single-seed comparison on this dataset carries that risk.
+6. **"The deeper model is useless" is also not supported.** Its `best_val_acc` ties baseline (0.9968) — it can reach baseline-level performance. The gap is a training-dynamics + camera-generalization problem, not a capacity problem. A learning-rate schedule, early stopping on val_loss, or BatchNorm might recover the gap (see §10 follow-ups).
+7. **No checkpointing on `val_loss`.** `train.fit()` evaluates the test set only after the final epoch, so the experimental model's 0.9849 reflects a post-collapse model rather than its best epoch (ep18, val_acc 0.997). The reported test accuracy therefore understates the deeper model's reachable capability.
 
 ### 8.3 Why this matters for P7
 
@@ -350,9 +354,10 @@ A second, more concrete, lesson: **a smaller model is not automatically a better
 
 ## 11. References
 
-- G. Amato, P. Bolettieri, F. Carrara, F. Falchi, C. Gennaro, C. Vairo. **"A System for Counting Free Parking Spaces from Visual Information."** ISTI-CNR technical report, (2016). Dataset: <http://cnrpark.it/>.
-- PyTorch documentation. <https://pytorch.org/docs/stable/index.html>. (Used for `torch.nn` API, `DataLoader`, and CUDA setup reference.)
-- O’Shea, K., & Nash, R. (2015). **"An Introduction to Convolutional Neural Networks."** arXiv:1511.08458 <https://arxiv.org/abs/1511.08458>
+- Amato, G., Bolettieri, P., Carrara, F., Falchi, F., Gennaro, C., & Vairo, C. (2016). **"A System for Counting Free Parking Spaces from Visual Information."** ISTI-CNR technical report. Dataset: <http://cnrpark.it/>.
+- Kingma, D. P., & Ba, J. (2015). **"Adam: A Method for Stochastic Optimization."** arXiv:1412.6980 <https://arxiv.org/abs/1412.6980>. (Cited for the Adam optimizer used in §3.4.)
+- O’Shea, K., & Nash, R. (2015). **"An Introduction to Convolutional Neural Networks."** arXiv:1511.08458 <https://arxiv.org/abs/1511.08458>. (Cited for the CNN building blocks — conv blocks, max-pooling, the depth-plus-spatial-shrinking pattern — used in the plain-English walkthrough and §3, §8.)
+- Paszke, A., Gross, S., Massa, F., Lerer, A., Bradbury, J., Chanan, G., et al. (2019). **"PyTorch: An Imperative Style, High-Performance Deep Learning Library."** *Advances in Neural Information Processing Systems 32.* <https://pytorch.org/docs/stable/index.html>. (Cited for the `torch.nn` API, `DataLoader`, `BCEWithLogitsLoss`, and CUDA setup used throughout the implementation.)
 
 
 ---
