@@ -319,20 +319,20 @@ A second, more concrete, lesson: **a smaller model is not automatically a better
 
 - **Single `SEED = 42`** constant in `src/dataset.py` and `src/train.py`. Both models see the same split indices.
 - **Hardware path:** `cnn_env` Python 3.12 venv at `D:/AI_Master/Udacity/capstone_projects/project_04_DeepLearning/cnn_env/` with `torch==2.12.1+cu126`.
-- **Reproduce the headline numbers (CLI, no notebook required):**
+
+- **Reproduce the headline numbers (CLI, no notebook required).** Run from the project root (`D:/AI_Master/Udacity/capstone_projects/project_04_DeepLearning/`):
 
   ```bash
-  D:/AI_Master/Udacity/capstone_projects/project_04_DeepLearning/cnn_env/Scripts/python.exe \
-      D:/AI_Master/Udacity/capstone_projects/project_04_DeepLearning/src/train.py \
-      --patches-dir D:/AI_Master/Udacity/capstone_projects/project_04_DeepLearning/data/CNRPark-Patches-150x150 \
+  cnn_env/Scripts/python.exe src/train.py \
+      --patches-dir data/CNRPark-Patches-150x150 \
       --epochs 20 \
-      --out-dir D:/AI_Master/Udacity/capstone_projects/project_04_DeepLearning/reports
+      --out-dir reports
   ```
 
-- **Reproduce the notebook output (Jupyter):**
+- **Reproduce the notebook output (Jupyter).** Run from the project root:
 
   ```bash
-  D:/AI_Master/Udacity/capstone_projects/project_04_DeepLearning/cnn_env/Scripts/jupyter lab
+  cnn_env/Scripts/jupyter lab
   ```
 
   Open `notebooks/deep_learning.ipynb` and **Kernel → Restart & Run All**. Expected runtime: ~8 minutes for the 20-epoch full run + ~5 minutes for the 3-seed §11 rerun on a GTX 1650 Ti.
