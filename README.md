@@ -1,4 +1,5 @@
 # Deep Learning Systems (CNRPark Occupancy CNN)
+![](https://github.com/user-attachments/assets/caff4e70-ee8d-41a1-b789-e30d345aed08)
 
 A controlled deep-learning experiment: two PyTorch CNNs for binary parking-space
 occupancy classification, compared under a **single-change** design. The baseline
